@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model FoodCourt {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  slug            String       @unique
+  location_config Json?        @default("{}")
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  restaurants     Restaurant[]
+  tables          Table[]
+
+  @@map("food_courts")
+}
+
+model Restaurant {
+  id            String     @id @default(uuid()) @db.Uuid
+  food_court_id String     @db.Uuid
+  name          String
+  description   String?
+  logo_url      String?
+  owner_user_id String?    @db.Uuid
+  is_active     Boolean?   @default(true)
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  categories    Category[]
+  menu_items    MenuItem[]
+  orders        Order[]
+  food_court    FoodCourt  @relation(fields: [food_court_id], references: [id])
+
+  @@index([food_court_id], map: "idx_restaurants_food_court")
+  @@map("restaurants")
+}
+
+model Category {
+  id            String     @id @default(uuid()) @db.Uuid
+  restaurant_id String     @db.Uuid
+  name          String
+  rank          Int?       @default(0)
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [id])
+  menu_items    MenuItem[]
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id            String                 @id @default(uuid()) @db.Uuid
+  restaurant_id String                 @db.Uuid
+  category_id   String?                @db.Uuid
+  name          String
+  description   String?
+  price         Decimal                @db.Decimal(10, 2)
+  image_url     String?
+  is_available  Boolean?               @default(true)
+  dietary_info  Json?                  @default("[]")
+  embedding     Unsupported("vector")?
+  created_at    DateTime               @default(now()) @db.Timestamptz(6)
+  category      Category?              @relation(fields: [category_id], references: [id])
+  restaurant    Restaurant             @relation(fields: [restaurant_id], references: [id])
+  cart_items    CartItem[]
+
+  @@index([restaurant_id], map: "idx_menu_items_restaurant")
+  @@map("menu_items")
+}
+
+model Table {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  food_court_id String    @db.Uuid
+  label         String
+  qr_code_svg   String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  orders        Order[]
+  cart_sessions CartSession[]
+  food_court    FoodCourt @relation(fields: [food_court_id], references: [id])
+
+  @@unique([food_court_id, label])
+  @@map("tables")
+}
+
+model Order {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id   String         @db.Uuid
+  table_id        String         @db.Uuid
+  user_session_id String?        @db.Uuid
+  status          OrderStatus?   @default(pending)
+  payment_status  PaymentStatus? @default(unpaid)
+  total_amount    Decimal        @db.Decimal(10, 2)
+  items           Json
+  customer_note   String?
+  created_at      DateTime       @default(now()) @db.Timestamptz(6)
+  restaurant      Restaurant     @relation(fields: [restaurant_id], references: [id])
+  table           Table          @relation(fields: [table_id], references: [id])
+
+  @@index([restaurant_id], map: "idx_orders_restaurant")
+  @@index([status], map: "idx_orders_status")
+  @@map("orders")
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  ready
+  completed
+  cancelled
+
+  @@map("order_status")
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+
+  @@map("payment_status")
+}
+
+model CartSession {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  table_id   String     @db.Uuid
+  status     String     @default("active")
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at DateTime   @default(now()) @updatedAt @db.Timestamptz(6)
+  table      Table      @relation(fields: [table_id], references: [id], onDelete: Cascade)
+  items      CartItem[]
+
+  @@index([table_id])
+  @@map("cart_sessions")
+}
+
+model CartItem {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id   String      @db.Uuid
+  menu_item_id String      @db.Uuid
+  quantity     Int         @default(1)
+  notes        String?
+  added_by     String?
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime    @default(now()) @updatedAt @db.Timestamptz(6)
+  session      CartSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  menu_item    MenuItem    @relation(fields: [menu_item_id], references: [id])
+
+  @@index([session_id])
+  @@map("cart_items")
+}
