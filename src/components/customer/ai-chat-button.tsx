@@ -58,19 +58,22 @@ export function AIChatButton({ menuContext = [] }: AIChatButtonProps) {
                         <Sparkles className="w-6 h-6" />
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[80vh] rounded-t-xl md:h-full md:w-[400px] md:rounded-none">
+                {/* Mobile: 100dvh or 85dvh to account for keyboard. Desktop: right sheet */}
+                <SheetContent side="bottom" className="h-[90dvh] md:h-full md:w-[400px] md:rounded-none rounded-t-xl overflow-hidden flex flex-col">
                     <SheetHeader>
                         <SheetTitle className="flex items-center">
                             <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
                             AI Waiter
                         </SheetTitle>
                     </SheetHeader>
-                    <div className="flex flex-col h-full pb-6 pt-4">
-                        <ScrollArea className="flex-1 pr-4 mb-4">
-                            <div className="space-y-4">
+
+                    {/* Main Chat Container - Grows to fill space */}
+                    <div className="flex-1 overflow-hidden flex flex-col min-h-0 pt-4 pb-2">
+                        <ScrollArea className="flex-1 pr-4">
+                            <div className="space-y-4 px-1">
                                 {messages.map((m, i) => (
                                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[80%] rounded-lg p-3 text-sm ${m.role === 'user'
+                                        <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${m.role === 'user'
                                             ? 'bg-blue-600 text-white'
                                             : 'bg-gray-100 text-gray-800'
                                             }`}>
@@ -78,17 +81,31 @@ export function AIChatButton({ menuContext = [] }: AIChatButtonProps) {
                                         </div>
                                     </div>
                                 ))}
-                                {loading && <div className="text-xs text-gray-400">AI is thinking...</div>}
+                                {loading && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-gray-50 rounded-2xl px-4 py-2 text-xs text-gray-500 animate-pulse">
+                                            Thinking...
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </ScrollArea>
-                        <div className="flex gap-2 mt-auto">
+                    </div>
+
+                    {/* Input Area - Fixed at bottom of container */}
+                    <div className="mt-auto pt-2 pb-safe-area-bottom">
+                        <div className="flex gap-2">
                             <Input
-                                placeholder="Ask about ingredients, spice level..."
+                                placeholder="Ask about the menu..."
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                                className="flex-1"
+                                autoComplete="off"
                             />
-                            <Button onClick={sendMessage} disabled={loading}>Send</Button>
+                            <Button onClick={sendMessage} disabled={loading} size="icon" className="shrink-0 w-10">
+                                <MessageCircle className="w-4 h-4" />
+                            </Button>
                         </div>
                     </div>
                 </SheetContent>
