@@ -41,7 +41,16 @@ export async function getTables(foodCourtId: string): Promise<TableWithQR[]> {
     if (!tables) return [];
 
     // 3. Generate Signed URLs
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Ensure we use the Environment Variable, fallback to localhost only if missing
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl) {
+        console.warn("NEXT_PUBLIC_APP_URL not set, falling back to localhost");
+        baseUrl = "http://localhost:3000";
+    }
+    // Remove trailing slash if present
+    baseUrl = baseUrl.replace(/\/$/, "");
+
+    console.log("Generating QR codes with Base URL:", baseUrl);
 
     return tables.map((table) => {
         const scanPath = `${baseUrl}/eat/${foodCourt.slug}/table/${table.id}`;
