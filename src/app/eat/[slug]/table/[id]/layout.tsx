@@ -21,9 +21,9 @@ export default async function CustomerLayout({
             {/* Header */}
             <header className="sticky top-0 z-10 bg-white border-b shadow-sm p-4 flex justify-between items-center">
                 <h1 className="font-bold text-lg">Savor</h1>
-                <div className="text-sm font-medium text-gray-500">
+                {/* <div className="text-sm font-medium text-gray-500">
                     Table {id}
-                </div>
+                </div> */}
             </header>
 
             {children}
